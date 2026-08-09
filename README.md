@@ -1,2 +1,2 @@
 # BlackJackGO
-First try into understanding Golang as a server for a simple blackjack game. Unity/C# for client.
+Decided to try and figure out Golang by making a simple Blackjack game with Go as the server, and Unity/C# as the client.
