@@ -1,16 +1,10 @@
 ﻿package main
 
-import (
-	"math/rand"
-	"time"
-)
-
 type Card struct {
-	Type string `json:"type"`
-	Suit string `json:"suit"`
+	Type  string `json:"type"`
+	Suit  string `json:"suit"`
+	Value int    `json:"value"`
 }
-
-type Deck []Card
 
 const (
 	Ace   = "ace"
@@ -49,32 +43,4 @@ var cardValues = map[string]int{
 	Jack:  10,
 	Queen: 10,
 	King:  10,
-}
-
-func InitDeck() (deck Deck) {
-	types := []string{Ace, Two, Three, Four, Five, Six,
-		Seven, Eight, Nine, Ten, Jack, Queen, King}
-
-	suits := []string{Heart, Diamond, Club, Spade}
-	
-	for i := range types {
-		for n := range suits {
-			card := Card{
-				Type: types[i],
-				Suit: suits[n],
-			}
-			deck = append(deck, card)
-		}
-	}
-	return
-}
-
-func Shuffle(d Deck) Deck {
-	rand.NewSource(time.Now().UnixNano())
-	rand.Shuffle(len(d), func(i, j int) { d[i], d[j] = d[j], d[i] })
-	return d
-}
-
-func ParseCard(card string) int {
-	return cardValues[card]
 }

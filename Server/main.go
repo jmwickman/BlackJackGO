@@ -5,26 +5,19 @@ import (
 )
 
 func main() {
-	//r := chi.NewRouter()
-	//r.Use(middleware.Logger)
-
-	play()
-
-	//r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	//	w.Write([]byte("Hello World!"))
-	//})
-	//http.ListenAndServe(":3000", r)
+	registerRoutes()
+	initGame()
 }
 
-func play() {
-	deck := InitDeck()
-	Debug(deck)
-	Shuffle(deck)
-	Debug(deck)
+func initGame() {
+	gameData.Init()
+	Debug(gameData.Deck)
+	gameData.Deck.Shuffle()
+	Debug(gameData.Deck)
 }
 
 func Debug(d Deck) {
-	for i := 0; i < len(d); i++ {
+	for i := range d {
 		fmt.Printf("Card #%d is a %s of %ss\n", i+1, d[i].Type, d[i].Suit)
 	}
 }

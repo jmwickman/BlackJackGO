@@ -1,0 +1,60 @@
+﻿package main
+
+import (
+	"math/rand"
+	"time"
+)
+
+type Deck []Card
+type Hand []Card
+
+func InitDeck() (d Deck) {
+	types := []string{Ace, Two, Three, Four, Five, Six,
+		Seven, Eight, Nine, Ten, Jack, Queen, King}
+
+	suits := []string{Heart, Diamond, Club, Spade}
+
+	for i := range types {
+		for n := range suits {
+			card := Card{
+				Type:  types[i],
+				Suit:  suits[n],
+				Value: cardValues[types[i]],
+			}
+			d = append(d, card)
+		}
+	}
+	return
+}
+
+func (d Deck) Shuffle() {
+	rand.NewSource(time.Now().UnixNano())
+	rand.Shuffle(len(d), func(i, j int) { d[i], d[j] = d[j], d[i] })
+}
+
+func (d Deck) Draw(count int) (Hand, Deck) {
+	i := len(d) - count
+	return Hand(d[i:]), d[:i]
+}
+
+func GetHandValue(h Hand) int {
+
+	totalValue := 0
+
+	for _, c := range h {
+		totalValue += c.Value
+	}
+
+	// If we're gonna bust with an Ace, change the value.
+	if totalValue > 21 {
+		for i := range h {
+			if h[i].Value == 11 {
+				h[i].Value = 1
+				totalValue -= 10
+				break
+			}
+		}
+	}
+
+	return totalValue
+}
