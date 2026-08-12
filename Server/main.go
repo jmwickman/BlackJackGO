@@ -1,12 +1,15 @@
-﻿package main
+package main
 
 import (
 	"fmt"
 )
 
 func main() {
-	registerRoutes()
-	initGame()
+	//initGame()
+	//
+	//s := CreateNewServer()
+	//s.MountHandlers()
+	//http.ListenAndServe(":3000", s.Router)
 }
 
 func initGame() {

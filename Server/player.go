@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 type PlayerMove int
 
@@ -24,7 +24,7 @@ func (p *PlayerData) Init() {
 		ID:     "Jim",
 		Wallet: 0,
 		Bet:    0,
-		Hand:   nil,
+		Hand:   Hand{},
 		Move:   None,
 		Won:    false,
 	}

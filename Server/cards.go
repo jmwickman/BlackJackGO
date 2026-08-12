@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 type Card struct {
 	Type  string `json:"type"`
@@ -21,7 +21,6 @@ const (
 	Queen = "queen"
 	King  = "king"
 )
-
 const (
 	Heart   = "heart"
 	Diamond = "diamond"

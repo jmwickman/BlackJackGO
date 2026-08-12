@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"math/rand"
@@ -38,6 +38,10 @@ func (d Deck) Draw(count int) (Hand, Deck) {
 }
 
 func GetHandValue(h Hand) int {
+
+	if IsNilOrZero(h) {
+		return 0
+	}
 
 	totalValue := 0
 

@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 type GameData struct {
 	Pot        float32    `json:"pot"`
@@ -16,7 +16,7 @@ func (g *GameData) Init() {
 	gameData = GameData{
 		Pot:        0,
 		Deck:       InitDeck(),
-		DealerHand: nil,
+		DealerHand: Hand{},
 		PlayerInfo: playerData,
 		GameOver:   false,
 		DealerWon:  false,
