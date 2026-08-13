@@ -14,8 +14,8 @@ var playerData PlayerData
 func (p *PlayerData) Init() {
 	playerData = PlayerData{
 		ID:     "Jim",
-		Wallet: 0,
-		Bet:    0,
+		Wallet: 100.00,
+		Bet:    1,
 		Hand:   Hand{},
 		Split:  false,
 		Won:    false,
