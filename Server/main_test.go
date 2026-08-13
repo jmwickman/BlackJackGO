@@ -43,7 +43,7 @@ func TestDrawHandler(t *testing.T) {
 			Wallet: 0,
 			Bet:    0,
 			Hand:   Hand{},
-			Move:   None,
+			Split:  false,
 			Won:    false,
 		},
 		GameOver:  false,

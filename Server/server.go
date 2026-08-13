@@ -12,7 +12,6 @@ import (
 
 type Server struct {
 	Router *chi.Mux
-	// Db, config can be added here
 }
 
 func CreateNewServer() *Server {
@@ -28,17 +27,42 @@ func (s *Server) MountHandlers() {
 	// Mount all handlers here
 	s.Router.Get("/player/draw/{count}",
 		func(w http.ResponseWriter, r *http.Request) { DrawHandler(w, r, true) })
-	s.Router.Get("/dealer/draw/{count}", func(w http.ResponseWriter, r *http.Request) { DrawHandler(w, r, false) })
+	s.Router.Get("/dealer/draw",
+		func(w http.ResponseWriter, r *http.Request) { DrawHandler(w, r, false) })
 
 }
 func DrawHandler(w http.ResponseWriter, r *http.Request, isPlayer bool) {
 
-	draw, err := strconv.Atoi(chi.URLParam(r, "count"))
-	if err != nil {
-		log.Fatal(err)
+	var playerDraw = 0
+	if isPlayer {
+		draw, err := strconv.Atoi(chi.URLParam(r, "count"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		playerDraw = draw
 	}
 
-	if draw > 0 {
+	if isPlayer && playerDraw == 0 {
+
+		data := GameData{}
+
+		err1 := json.NewDecoder(r.Body).Decode(&data)
+		if err1 != nil {
+			log.Fatal("Error reading Draw Card request", err1)
+		}
+
+		// Make the response
+		w.Header().Set("Content-Type", "application/json")
+
+		gameData = data
+
+		err2 := json.NewEncoder(w).Encode(gameData)
+		if err2 != nil {
+			log.Fatal(err2)
+		}
+
+	} else {
 		data := GameData{}
 		newDraw := Hand{}
 
@@ -47,15 +71,23 @@ func DrawHandler(w http.ResponseWriter, r *http.Request, isPlayer bool) {
 			log.Fatal("Error reading Draw Card request", err1)
 		}
 
-		newDraw, data.Deck = data.Deck.Draw(draw)
+		var playResult HandEval
 
 		if isPlayer {
-			data.PlayerInfo.Hand = append(data.PlayerInfo.Hand, newDraw...)
-		} else {
-			data.DealerHand = append(data.DealerHand, newDraw...)
-		}
 
-		playResult := EvaluateDrawResults(data.PlayerInfo.Hand, data.DealerHand)
+			if playerDraw > 0 && playerDraw < 3 {
+				newDraw, data.Deck = data.Deck.Draw(playerDraw)
+				data.PlayerInfo.Hand = append(data.PlayerInfo.Hand, newDraw...)
+				playResult = EvaluateDrawResults(data.PlayerInfo.Hand, data.DealerHand)
+			}
+
+		} else {
+			for playResult == NoResult {
+				newDraw, data.Deck = data.Deck.Draw(1)
+				data.DealerHand = append(data.DealerHand, newDraw...)
+				playResult = EvaluateDrawResults(data.PlayerInfo.Hand, data.DealerHand)
+			}
+		}
 
 		data.PlayerInfo.Won = playResult == PlayerWin
 		data.DealerWon = playResult == DealerWin

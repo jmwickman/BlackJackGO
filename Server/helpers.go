@@ -5,3 +5,29 @@ import "reflect"
 func IsNilOrZero(a any) bool {
 	return reflect.ValueOf(a).IsNil() || reflect.ValueOf(a).IsZero()
 }
+
+func GetHandValue(h Hand) int {
+
+	if IsNilOrZero(h) {
+		return 0
+	}
+
+	totalValue := 0
+
+	for _, c := range h {
+		totalValue += c.Value
+	}
+
+	// If we're gonna bust with an Ace, change the value.
+	if totalValue > 21 {
+		for i := range h {
+			if h[i].Value == 11 {
+				h[i].Value = 1
+				totalValue -= 10
+				break
+			}
+		}
+	}
+
+	return totalValue
+}
