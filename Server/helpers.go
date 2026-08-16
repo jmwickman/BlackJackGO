@@ -1,6 +1,11 @@
 package main
 
-import "reflect"
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"reflect"
+)
 
 func IsNilOrZero(a any) bool {
 	return reflect.ValueOf(a).IsNil() || reflect.ValueOf(a).IsZero()
@@ -30,4 +35,29 @@ func GetHandValue(h Hand) int {
 	}
 
 	return totalValue
+}
+
+func ReadGameData(w http.ResponseWriter, r *http.Request) GameData {
+
+	data := GameData{}
+
+	err1 := json.NewDecoder(r.Body).Decode(&data)
+	if err1 != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println(err1)
+	}
+
+	return data
+}
+
+func WriteGameData(w http.ResponseWriter, d GameData) {
+
+	// Make the response
+	w.Header().Set("Content-Type", "application/json")
+
+	err2 := json.NewEncoder(w).Encode(d)
+	if err2 != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println(err2)
+	}
 }

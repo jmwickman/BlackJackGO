@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -25,85 +24,105 @@ func (s *Server) MountHandlers() {
 	s.Router.Use(middleware.Logger)
 
 	// Mount all handlers here
-	s.Router.Get("/player/draw/{count}",
-		func(w http.ResponseWriter, r *http.Request) { DrawHandler(w, r, true) })
-	s.Router.Get("/dealer/draw/{firstDeal}",
-		func(w http.ResponseWriter, r *http.Request) { DrawHandler(w, r, false) })
-
+	s.Router.Get("/player/draw/{count}", PlayerDrawHandler)
+	s.Router.Get("/dealer/draw", DealerDrawHandler)
+	s.Router.Get("/newhand",
+		func(w http.ResponseWriter, r *http.Request) { NewGameHandler(w, r, false) })
+	s.Router.Get("/newgame",
+		func(w http.ResponseWriter, r *http.Request) { NewGameHandler(w, r, true) })
 }
-func DrawHandler(w http.ResponseWriter, r *http.Request, isPlayer bool) {
 
-	var playerDraw = 0
-	var firstDeal = false
-	if isPlayer {
-		draw, err := strconv.Atoi(chi.URLParam(r, "count"))
-		if err != nil || draw < 1 {
-			w.WriteHeader(http.StatusBadRequest)
-			log.Println(err)
-		}
+func PlayerDrawHandler(w http.ResponseWriter, r *http.Request) {
 
-		if draw == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			log.Println("Draw value less than 1.")
-		}
-
-		playerDraw = draw
-	} else {
-		deal, err := strconv.ParseBool(chi.URLParam(r, "firstDeal"))
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			log.Println(err)
-		}
-
-		firstDeal = deal
+	draw, err := strconv.Atoi(chi.URLParam(r, "count"))
+	if err != nil || draw < 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println(err)
 	}
 
-	data := GameData{}
+	if draw == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("Draw value less than 1.")
+	}
+
+	data := ReadGameData(w, r)
 	newDraw := Hand{}
 
-	err1 := json.NewDecoder(r.Body).Decode(&data)
-	if err1 != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Println(err1)
-	}
-
 	var playResult HandEval
+	var winAmount float32
+	playerInfo := data.PlayerInfo
 
-	if isPlayer {
-
-		if playerDraw > 0 && playerDraw < 3 {
-			newDraw, data.Deck = data.Deck.Draw(playerDraw)
-			data.PlayerInfo.Hand = append(data.PlayerInfo.Hand, newDraw...)
-			playResult = EvaluateDrawResults(data.PlayerInfo.Hand, data.DealerHand)
-		}
-
-	} else {
-
-		for playResult == NoResult {
-
-			drawCount := 1
-			if firstDeal {
-				drawCount = 2
-			}
-
-			newDraw, data.Deck = data.Deck.Draw(drawCount)
-			data.DealerHand = append(data.DealerHand, newDraw...)
-			playResult = EvaluateDrawResults(data.PlayerInfo.Hand, data.DealerHand)
-		}
+	if draw > 0 && draw < 3 {
+		newDraw, data.Deck = data.Deck.Draw(draw)
+		playerInfo.Hand = append(playerInfo.Hand, newDraw...)
+		playResult, winAmount = EvaluateDrawResults(playerInfo.Hand, data.DealerHand, playerInfo.Bet)
 	}
 
+	if winAmount > 0 {
+		playerInfo.Wallet += winAmount
+	}
+	data.PlayerInfo = playerInfo
 	data.PlayerInfo.Won = playResult == PlayerWin
 	data.DealerWon = playResult == DealerWin
 	data.GameOver = playResult != NoResult
 
 	gameData = data
 
-	// Make the response
-	w.Header().Set("Content-Type", "application/json")
+	WriteGameData(w, gameData)
+}
 
-	err2 := json.NewEncoder(w).Encode(gameData)
-	if err2 != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Println(err2)
+func DealerDrawHandler(w http.ResponseWriter, r *http.Request) {
+
+	data := ReadGameData(w, r)
+	newDraw := Hand{}
+
+	var playResult HandEval
+	var winAmount float32
+	playerInfo := data.PlayerInfo
+
+	for playResult == NoResult {
+		newDraw, data.Deck = data.Deck.Draw(1)
+		data.DealerHand = append(data.DealerHand, newDraw...)
+		playResult, winAmount = EvaluateDrawResults(playerInfo.Hand, data.DealerHand, playerInfo.Bet)
 	}
+
+	if winAmount > 0 {
+		playerInfo.Wallet += winAmount
+	}
+
+	data.PlayerInfo = playerInfo
+	data.PlayerInfo.Won = playResult == PlayerWin
+	data.DealerWon = playResult == DealerWin
+	data.GameOver = true
+
+	gameData = data
+
+	WriteGameData(w, gameData)
+}
+
+func NewGameHandler(w http.ResponseWriter, r *http.Request, isNewGame bool) {
+
+	var data GameData
+	if isNewGame {
+		gameData.Init()
+		data = gameData
+	} else {
+		data = ReadGameData(w, r)
+		data.Deck = InitDeck()
+	}
+
+	data.Deck.Shuffle()
+	newDraw := Hand{}
+
+	// Draw for the player
+	newDraw, data.Deck = data.Deck.Draw(2)
+	data.PlayerInfo.Hand = newDraw
+
+	// Draw for the dealer
+	newDraw, data.Deck = data.Deck.Draw(2)
+	data.DealerHand = newDraw
+
+	gameData = data
+
+	WriteGameData(w, gameData)
 }

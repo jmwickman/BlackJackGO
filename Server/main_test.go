@@ -35,13 +35,12 @@ func TestDrawHandler(t *testing.T) {
 	s.MountHandlers()
 
 	testData := GameData{
-		Pot:        0,
 		Deck:       InitDeck(),
 		DealerHand: Hand{},
 		PlayerInfo: PlayerData{
 			ID:     "Jim",
-			Wallet: 0,
-			Bet:    0,
+			Wallet: 100.00,
+			Bet:    10,
 			Hand:   Hand{},
 			Split:  false,
 			Won:    false,

@@ -1,7 +1,6 @@
 package main
 
 type GameData struct {
-	Pot        float32    `json:"pot"`
 	Deck       Deck       `json:"deck"`
 	DealerHand Hand       `json:"dealer_hand"`
 	PlayerInfo PlayerData `json:"player_info"`
@@ -14,7 +13,6 @@ var gameData GameData
 func (g *GameData) Init() {
 	playerData.Init()
 	gameData = GameData{
-		Pot:        0,
 		Deck:       InitDeck(),
 		DealerHand: Hand{},
 		PlayerInfo: playerData,
