@@ -30,32 +30,30 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 	}
 }
 
-func TestDrawHandler(t *testing.T) {
+func TestGamePlayHandler(t *testing.T) {
 	s := CreateNewServer()
 	s.MountHandlers()
 
-	testData := GameData{
-		Deck:       InitDeck(),
-		DealerHand: Hand{},
-		PlayerInfo: PlayerData{
-			ID:     "Jim",
-			Wallet: 100.00,
-			Bet:    10,
-			Hand:   Hand{},
-			Split:  false,
-			Won:    false,
-		},
-		GameOver:  false,
-		DealerWon: false,
+	for range 1 {
+		RunGame(t, s)
 	}
+}
 
-	jsonData, _ := json.Marshal(testData)
-
-	req, _ := http.NewRequest("GET", "/player/draw/1", bytes.NewBuffer(jsonData))
-
+func RunGame(t *testing.T, s *Server) {
+	// Create new game
+	req, _ := http.NewRequest("GET", "/newgame", nil)
 	response := executeRequest(req, s)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	fmt.Println(response.Body.String())
+	// Dealer draw
+	jsonData, _ := json.Marshal(gameData)
+	req1, _ := http.NewRequest("GET", "/dealer/draw", bytes.NewBuffer(jsonData))
+	response = executeRequest(req1, s)
+
+	fmt.Println(gameData.DealerHand, gameData.DealerWon)
+	fmt.Println(gameData.PlayerInfo.Hand)
+	fmt.Println(gameData.PlayerInfo.Wallet, gameData.PlayerInfo.Bet)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
 }

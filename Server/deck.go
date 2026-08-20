@@ -8,6 +8,8 @@ import (
 type Deck []Card
 type Hand []Card
 
+var masterDeck Deck
+
 func InitDeck() (d Deck) {
 	types := []string{Ace, Two, Three, Four, Five, Six,
 		Seven, Eight, Nine, Ten, Jack, Queen, King}

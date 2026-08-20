@@ -37,25 +37,12 @@ func GetHandValue(h Hand) int {
 	return totalValue
 }
 
-func ReadGameData(w http.ResponseWriter, r *http.Request) GameData {
-
-	data := GameData{}
-
-	err1 := json.NewDecoder(r.Body).Decode(&data)
-	if err1 != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Println(err1)
-	}
-
-	return data
-}
-
-func WriteGameData(w http.ResponseWriter, d GameData) {
+func WriteGameData(w http.ResponseWriter, g GameData) {
 
 	// Make the response
 	w.Header().Set("Content-Type", "application/json")
 
-	err2 := json.NewEncoder(w).Encode(d)
+	err2 := json.NewEncoder(w).Encode(g)
 	if err2 != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Println(err2)

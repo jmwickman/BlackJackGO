@@ -10,13 +10,19 @@ type GameData struct {
 
 var gameData GameData
 
-func (g *GameData) Init() {
-	playerData.Init()
-	gameData = GameData{
-		Deck:       InitDeck(),
-		DealerHand: Hand{},
-		PlayerInfo: playerData,
-		GameOver:   false,
-		DealerWon:  false,
+func (g *GameData) Init(p PlayerData) {
+	g.Deck = Deck{}
+	g.DealerHand = Hand{}
+	g.PlayerInfo = p
+	g.GameOver = false
+	g.DealerWon = false
+}
+
+func (g *GameData) UpdateGameResult(h HandEval, w float32) {
+	if w > 0 {
+		g.PlayerInfo.Wallet += w
 	}
+	g.PlayerInfo.Won = h == PlayerWin
+	g.DealerWon = h == DealerWin
+	g.GameOver = h != NoResult
 }

@@ -12,12 +12,10 @@ type PlayerData struct {
 var playerData PlayerData
 
 func (p *PlayerData) Init() {
-	playerData = PlayerData{
-		ID:     "Jim",
-		Wallet: 100.00,
-		Bet:    0,
-		Hand:   Hand{},
-		Split:  false,
-		Won:    false,
-	}
+	p.ID = "Jim"
+	p.Wallet = 100.00
+	p.Bet = 0
+	p.Hand = Hand{}
+	p.Split = false
+	p.Won = false
 }

@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type HandEval int
 
 const (
@@ -13,16 +15,14 @@ func EvaluateDrawResults(p Hand, d Hand, b float32) (HandEval, float32) {
 	pSum := GetHandValue(p)
 	dSum := GetHandValue(d)
 
+	fmt.Println(pSum, dSum)
+
 	switch {
-	case pSum == 21:
-	case dSum > 21:
-	case dSum >= 17 && pSum > dSum:
+	case pSum == 21, dSum > 21, dSum >= 17 && pSum > dSum:
 		{
 			return PlayerWin, GetWinAmount(b, pSum == 21)
 		}
-	case dSum == 21:
-	case pSum > 21:
-	case dSum >= 17 && pSum < dSum:
+	case dSum == 21, pSum > 21, dSum >= 17 && pSum < dSum:
 		{
 			return DealerWin, 0
 		}

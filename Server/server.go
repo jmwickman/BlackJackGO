@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -25,11 +26,55 @@ func (s *Server) MountHandlers() {
 
 	// Mount all handlers here
 	s.Router.Get("/player/draw/{count}", PlayerDrawHandler)
+	s.Router.Get("/player/bet/{bet}", PlayerBetHandler)
 	s.Router.Get("/dealer/draw", DealerDrawHandler)
 	s.Router.Get("/newhand",
-		func(w http.ResponseWriter, r *http.Request) { NewGameHandler(w, r, false) })
+		func(w http.ResponseWriter, r *http.Request) { NewGameHandler(w, false) })
 	s.Router.Get("/newgame",
-		func(w http.ResponseWriter, r *http.Request) { NewGameHandler(w, r, true) })
+		func(w http.ResponseWriter, r *http.Request) { NewGameHandler(w, true) })
+}
+
+func NewGameHandler(w http.ResponseWriter, isNewGame bool) {
+
+	if isNewGame {
+		masterDeck = InitDeck()
+		playerData.Init()
+		gameData.Init(playerData)
+		fmt.Println("newgame")
+	}
+
+	deck := masterDeck
+	playerInfo := gameData.PlayerInfo
+	newDraw := Hand{}
+
+	// Shuffle
+	deck.Shuffle()
+
+	// Draw for the player
+	newDraw, deck = deck.Draw(1)
+	playerInfo.Hand = newDraw
+
+	// Draw for the dealer
+	newDraw, deck = deck.Draw(2)
+	gameData.DealerHand = newDraw
+
+	gameData.PlayerInfo = playerInfo
+	gameData.Deck = deck
+
+	WriteGameData(w, gameData)
+}
+
+func PlayerBetHandler(w http.ResponseWriter, r *http.Request) {
+	bet, err := strconv.ParseFloat(chi.URLParam(r, "bet"), 32)
+	if err != nil || bet < 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println(err)
+	}
+
+	gameData.PlayerInfo.Bet = float32(bet)
+	gameData.PlayerInfo.Wallet -= float32(bet)
+
+	WriteGameData(w, gameData)
 }
 
 func PlayerDrawHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,84 +90,42 @@ func PlayerDrawHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Draw value less than 1.")
 	}
 
-	data := ReadGameData(w, r)
 	newDraw := Hand{}
 
 	var playResult HandEval
 	var winAmount float32
-	playerInfo := data.PlayerInfo
+	playerInfo := gameData.PlayerInfo
 
 	if draw > 0 && draw < 3 {
-		newDraw, data.Deck = data.Deck.Draw(draw)
+		newDraw, gameData.Deck = gameData.Deck.Draw(draw)
 		playerInfo.Hand = append(playerInfo.Hand, newDraw...)
-		playResult, winAmount = EvaluateDrawResults(playerInfo.Hand, data.DealerHand, playerInfo.Bet)
+		playResult, winAmount = EvaluateDrawResults(playerInfo.Hand, gameData.DealerHand, playerInfo.Bet)
 	}
 
-	if winAmount > 0 {
-		playerInfo.Wallet += winAmount
-	}
-	data.PlayerInfo = playerInfo
-	data.PlayerInfo.Won = playResult == PlayerWin
-	data.DealerWon = playResult == DealerWin
-	data.GameOver = playResult != NoResult
-
-	gameData = data
+	gameData.PlayerInfo = playerInfo
+	gameData.UpdateGameResult(playResult, winAmount)
 
 	WriteGameData(w, gameData)
 }
 
 func DealerDrawHandler(w http.ResponseWriter, r *http.Request) {
 
-	data := ReadGameData(w, r)
 	newDraw := Hand{}
 
 	var playResult HandEval
 	var winAmount float32
-	playerInfo := data.PlayerInfo
+	playerInfo := gameData.PlayerInfo
+	hand := gameData.DealerHand
 
 	for playResult == NoResult {
-		newDraw, data.Deck = data.Deck.Draw(1)
-		data.DealerHand = append(data.DealerHand, newDraw...)
-		playResult, winAmount = EvaluateDrawResults(playerInfo.Hand, data.DealerHand, playerInfo.Bet)
+		newDraw, gameData.Deck = gameData.Deck.Draw(1)
+		hand = append(hand, newDraw...)
+		playResult, winAmount = EvaluateDrawResults(playerInfo.Hand, hand, playerInfo.Bet)
 	}
 
-	if winAmount > 0 {
-		playerInfo.Wallet += winAmount
-	}
-
-	data.PlayerInfo = playerInfo
-	data.PlayerInfo.Won = playResult == PlayerWin
-	data.DealerWon = playResult == DealerWin
-	data.GameOver = true
-
-	gameData = data
-
-	WriteGameData(w, gameData)
-}
-
-func NewGameHandler(w http.ResponseWriter, r *http.Request, isNewGame bool) {
-
-	var data GameData
-	if isNewGame {
-		gameData.Init()
-		data = gameData
-	} else {
-		data = ReadGameData(w, r)
-		data.Deck = InitDeck()
-	}
-
-	data.Deck.Shuffle()
-	newDraw := Hand{}
-
-	// Draw for the player
-	newDraw, data.Deck = data.Deck.Draw(2)
-	data.PlayerInfo.Hand = newDraw
-
-	// Draw for the dealer
-	newDraw, data.Deck = data.Deck.Draw(2)
-	data.DealerHand = newDraw
-
-	gameData = data
+	gameData.PlayerInfo = playerInfo
+	gameData.DealerHand = hand
+	gameData.UpdateGameResult(playResult, winAmount)
 
 	WriteGameData(w, gameData)
 }
